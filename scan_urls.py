@@ -10,7 +10,7 @@ def read_extensions():
 async def do_request(req):
     return requests.get(req)
 
-async def scan_possible_urls(address, wordlist = "common.txt"):
+async def scan_possible_urls(address, wordlist):
     try:
         exts = read_extensions()
         words_file = open(wordlist,'r')
