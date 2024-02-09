@@ -30,5 +30,7 @@ async def scan_possible_urls(address, wordlist):
 
         return ok_addresses
         words_file.close()
-    except: 
+    except Exception as error: 
         print("Something went wrong. Can't connect with host")
+        print(error)
+        

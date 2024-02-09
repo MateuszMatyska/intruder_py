@@ -1,48 +1,35 @@
-from scan_urls import scan_possible_urls
-from help import display_help
+import requests
 import asyncio
-import argparse
+import json
 
-class CustomFormatter(argparse.HelpFormatter):
-    def add_argument(self, action):
-        if action.help == 'SUPPRESS':
-            return
-        help_text = self._expand_help(action)
-        self._add_item(self._format_action, (action, help_text))
+def format_post_params(param):
+    return json.loads(json.dumps(param))
 
-def check_arg_value(value_arg, default_value):
-    if value_arg is not None:
-        return value_arg
-    else:
-        return default_value
+async def do_get_request(req, data):
+    return requests.get(req, params=data)
 
-def run_scanner(address, wordlist):
-    wordlist_file_name = check_arg_value(wordlist, "common.txt")
-    address = check_arg_value(address, "http://172.17.0.2")
+async def do_post_request(req,data):
+    headers = {'content-type': 'application/x-www-form-urlencoded'}
+    return requests.post(req,data=data,headers=headers)
+
+async def intruder(address, r_type, wordlist ):
+    try:
+        words_file = open(wordlist,'r')
+        words_list = [word.strip() for word in words_file]
     
-    results = asyncio.run(scan_possible_urls(address, wordlist_file_name))
-    return results
-
-def main():
-    parser = argparse.ArgumentParser(description="Intruder", add_help=False, formatter_class=CustomFormatter)
-    parser.add_argument("-h","--help", action='store_true')
-    parser.add_argument("-m", "--mode")
-    parser.add_argument("-w", "--wordlist")
-    parser.add_argument("-a", "--address")
-
-    args = parser.parse_args() 
-    
-    if args.help is True:
-        display_help()
-    else:
-        if args.mode == "s":
-            run_scanner(args.address, args.wordlist);
-        elif args.mode == "i":
-            print("Intruder1")
-        else:
-            display_help()
-
-    
-
-if __name__ == "__main__":
-    main()
+        if r_type == 'GET':
+            for item in words_list:
+                r_data = format_post_params(item)
+                r = await do_get_request(address, r_data)
+                size = r.headers['content-length']
+                print(f'Request results: Params: {item} Code: {r.status_code} Size: {size}' )
+        if r_type == 'POST':
+            for item in words_list:
+                r_data = format_post_params(item)
+                r = await do_post_request(address, r_data)
+                size = r.headers['content-length']
+                print(f'Request results: Params: {item} Code: {r.status_code} Size: {size}' )
+        words_file.close()
+    except Exception as error: 
+        print("Something went wrong. Can't connect with host")
+        print(error)
